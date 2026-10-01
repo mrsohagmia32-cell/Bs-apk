@@ -18,8 +18,8 @@ const appSchema = new mongoose.Schema({
     desc: String,
     fullDesc: String,
     icon: String,
-    downloadUrl: String, // এখানে downloadUrl যুক্ত করা হলো
-    link: String,        // পুরোনো ফিল্ড ব্যাকআপ হিসেবে রাখা হলো
+    downloadUrl: String,
+    link: String,
     size: String,
     screenshots: [String]
 });
@@ -37,17 +37,33 @@ app.post('/api/add-app', async (req, res) => {
     }
 });
 
-// সব অ্যাপ দেখার রাউট
+// সব অ্যাপ দেখার রাউট (এখানে ডাউনলোড লিংক নিশ্চিত করার জন্য ম্যাপ করা হয়েছে)
 app.get('/api/apps', async (req, res) => {
     try {
         const apps = await AppModel.find();
-        res.json(apps);
+        
+        // প্রতিটি অ্যাপের জন্য ডাউনলোড লিংক নিশ্চিত করা হচ্ছে
+        const formattedApps = apps.map(app => {
+            const appObj = app.toObject();
+            // downloadUrl বা link যেকোনো একটি থাকলেই সেটাকে প্রাধান্য দেওয়া হবে
+            let finalLink = appObj.downloadUrl || appObj.link || '#';
+            finalLink = finalLink.trim();
+            
+            if (finalLink !== '#' && !finalLink.startsWith('http://') && !finalLink.startsWith('https://')) {
+                finalLink = 'https://' + finalLink;
+            }
+            
+            appObj.downloadUrl = finalLink;
+            return appObj;
+        });
+
+        res.json(formattedApps);
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
-// অ্যাপ আপডেট বা এডিট করার রাউট (নতুন যুক্ত হলো)
+// অ্যাপ আপডেট বা এডিট করার রাউট
 app.put('/api/apps/:id', async (req, res) => {
     try {
         const updatedApp = await AppModel.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -60,7 +76,7 @@ app.put('/api/apps/:id', async (req, res) => {
     }
 });
 
-// অ্যাপ ডিলিট করার রাউট (নতুন যুক্ত হলো)
+// অ্যাপ ডিলিট করার রাউট
 app.delete('/api/apps/:id', async (req, res) => {
     try {
         const deletedApp = await AppModel.findByIdAndDelete(req.params.id);
