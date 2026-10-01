@@ -18,13 +18,15 @@ const appSchema = new mongoose.Schema({
     desc: String,
     fullDesc: String,
     icon: String,
-    link: String,
+    downloadUrl: String, // এখানে downloadUrl যুক্ত করা হলো
+    link: String,        // পুরোনো ফিল্ড ব্যাকআপ হিসেবে রাখা হলো
     size: String,
     screenshots: [String]
 });
 
 const AppModel = mongoose.model('App', appSchema);
 
+// নতুন অ্যাপ যোগ করার রাউট
 app.post('/api/add-app', async (req, res) => {
     try {
         const newApp = new AppModel(req.body);
@@ -35,10 +37,37 @@ app.post('/api/add-app', async (req, res) => {
     }
 });
 
+// সব অ্যাপ দেখার রাউট
 app.get('/api/apps', async (req, res) => {
     try {
         const apps = await AppModel.find();
         res.json(apps);
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// অ্যাপ আপডেট বা এডিট করার রাউট (নতুন যুক্ত হলো)
+app.put('/api/apps/:id', async (req, res) => {
+    try {
+        const updatedApp = await AppModel.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (!updatedApp) {
+            return res.status(404).json({ success: false, message: "App not found" });
+        }
+        res.json({ success: true, message: "App updated successfully!", updatedApp });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// অ্যাপ ডিলিট করার রাউট (নতুন যুক্ত হলো)
+app.delete('/api/apps/:id', async (req, res) => {
+    try {
+        const deletedApp = await AppModel.findByIdAndDelete(req.params.id);
+        if (!deletedApp) {
+            return res.status(404).json({ success: false, message: "App not found" });
+        }
+        res.json({ success: true, message: "App deleted successfully!" });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
