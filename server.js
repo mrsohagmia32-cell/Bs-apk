@@ -6,14 +6,13 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// আপনার দেওয়া MongoDB Atlas কানেকশন স্ট্রিং (সাথে appstore ডাটাবেস নাম যুক্ত করা)
-const MONGO_URI = "mongodb+srv://kinkbd71_db_user:YE7KJJq7BSclFFfA@cluster0.e6w2ulv.mongodb.net/appstore?retryWrites=true&w=majority&appName=Cluster0";
+// Render-এর এনভায়রনমেন্ট ভেরিয়েবল থেকে MongoDB ইউআরএল রিড করবে
+const MONGO_URI = process.env.MONGO_URI || "আপনার_লোকাল_ইউআরএল_বা_ফলব্যাক";
 
 mongoose.connect(MONGO_URI)
     .then(() => console.log("MongoDB Connected Successfully!"))
     .catch(err => console.log("DB Connection Error: ", err));
 
-// অ্যাপসের জন্য ডেটাবেস স্কিমা (Schema)
 const appSchema = new mongoose.Schema({
     name: String,
     desc: String,
@@ -26,7 +25,6 @@ const appSchema = new mongoose.Schema({
 
 const AppModel = mongoose.model('App', appSchema);
 
-// নতুন অ্যাপ যোগ করার এপিআই
 app.post('/api/add-app', async (req, res) => {
     try {
         const newApp = new AppModel(req.body);
@@ -37,7 +35,6 @@ app.post('/api/add-app', async (req, res) => {
     }
 });
 
-// সব অ্যাপ দেখার এপিআই
 app.get('/api/apps', async (req, res) => {
     try {
         const apps = await AppModel.find();
